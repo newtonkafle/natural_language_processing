@@ -6,6 +6,7 @@ app = Flask(__name__)
 @app.route("/")
 def home():
     if request.method == "POST":
+        # code goes here for model
         return
     return render_template("index.html")
 
