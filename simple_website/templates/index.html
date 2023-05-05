@@ -31,24 +31,19 @@
           <div class="d-flex justify-content-center mb-4">
             <img src="./static/logo.png" class="img rounded" alt="logo" />
           </div>
-          <form>
+          <form method="POST" ,action="{{url_for('home')}}">
+            {{ form.csrf_token }}
             <div class="mb-3">
               <label for="review" class="ml2 form-label h2 text-dark"
                 >Enter a review</label
               >
-              <input
-                type="text"
-                class="form-control"
-                id="review"
-                aria-describedby="reviewHelp"
-                placeholder="Review.."
-              />
+              {{form.review_field(class="form-control")}}
               <div id="reviewHelp" class="form-text">
                 Enter a review for sentiment analysis.
               </div>
             </div>
             <div class="d-flex justify-content-center mt-4">
-              <button type="submit" class="btn fs-6 btn-warning">Submit</button>
+              {{form.submit(class="btn fs-6 btn-warning")}}
             </div>
           </form>
         </div>
