@@ -23,9 +23,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/2.0.2/anime.min.js"></script>
   </head>
   <body>
-    <div
-      class="container d-flex justify-content-center align-items-center vh-100"
-    >
+  	
+    <!--<divclass="container d-flex justify-content-center align-items-center vh-100">-->
+     <div class="container mt-5">
+     	<h1>Survey</h1>
       <div class="shadow-lg rounded">
         <div class="mx-5 my-5">
           <div class="d-flex justify-content-center mb-4">
@@ -34,9 +35,7 @@
           <form method="POST" ,action="{{url_for('home')}}">
             {{ form.csrf_token }}
             <div class="mb-3">
-              <label for="review" class="ml2 form-label h2 text-dark"
-                >Enter a review</label
-              >
+              <label for="review" class="ml2 form-label h2 text-dark">Enter your review</label>
               {{form.review_field(class="form-control")}}
               <div id="reviewHelp" class="form-text">
                 Enter a review for sentiment analysis.
@@ -46,6 +45,11 @@
               {{form.submit(class="btn fs-6 btn-warning")}}
             </div>
           </form>
+          <div class="d-flex justify-content-center mt-4">
+          				
+          					<img width="50px" height="50px" src="./static/{{response}}.png" />
+                  
+          </div>
         </div>
       </div>
     </div>
