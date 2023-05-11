@@ -50,8 +50,8 @@ def home():
 
             result = "Postive" if predictions[0] == 1 else "Negative"
             print(result)
-        return result
-    return render_template("index.html", form=form)
+        return render_template("index.html", form=form,response=result) +'<div class="d-flex justify-content-center mt-4"><br/>Reviewed Text : '+ form.review_field.data + '<br/>Classification: ' + result +'</div>'
+    return render_template("index.html", form=form,response='Neutral')
 
 
 if __name__ == "__main__":
