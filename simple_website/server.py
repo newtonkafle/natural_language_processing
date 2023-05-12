@@ -7,6 +7,7 @@ import sys
 
 sys.path.append("../")  # noqa: E402
 from model import Model
+from data_cleaning import DataPreparation
 
 app = Flask(__name__)
 app.secret_key = "thisissecret"
@@ -24,23 +25,28 @@ class Review(FlaskForm):
 
 @app.route("/", methods=("GET", "POST"))
 def home():
+    # load the dataprep class
+    data_prep = DataPreparation()
+
+    # load the model class
+    model = Model()
+    loaded_model = model.load_model(model_name="LSTM", path="../data/model_weights/")
     form = Review()
     if request.method == "POST":
         print("hello")
         result = ""
         if form.validate_on_submit():
-            print("hello")
-            review = form.review_field.data.split(" ")
-            review = [review]
+            # print("hello")
+            review = form.review_field.data
+            # # review = [review]
             print(review)
-            model = Model()
-            loaded_model = model.load_model(path="../data/model_weights/model.h5")
-            # remove the stop words
-            # lemmitize the words
+
+            # remove the stop words and lemitize the words
+            cleaned_review = [data_prep.clean_and_lemmitize(review)]
 
             # convert the text into the numerical data
-            t_review = model.tokenize_and_pad_items(
-                item_seq=review, max_length=70
+            t_review = data_prep.tokenize_and_pad_items(
+                item_seq=cleaned_review, max_length=70
             )  # noqa: E402
 
             print(t_review)
@@ -50,8 +56,15 @@ def home():
 
             result = "Postive" if predictions[0] == 1 else "Negative"
             print(result)
-        return render_template("index.html", form=form,response=result) +'<div class="d-flex justify-content-center mt-4"><br/>Reviewed Text : '+ form.review_field.data + '<br/>Classification: ' + result +'</div>'
-    return render_template("index.html", form=form,response='Neutral')
+        return (
+            render_template("index.html", form=form, response=result)
+            + '<div class="d-flex justify-content-center mt-4"><br/>Reviewed Text : '
+            + form.review_field.data
+            + "<br/>Classification: "
+            + result
+            + "</div>"
+        )
+    return render_template("index.html", form=form, response="Neutral")
 
 
 if __name__ == "__main__":

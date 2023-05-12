@@ -1,68 +1,124 @@
+# this model refers to the model class we developed which is model.py
+# from model import Model
+
 # imports
 import tensorflow as tf
 from keras import Sequential
-from keras.layers import Dense, LSTM, Embedding, Dropout
-from keras.utils.data_utils import pad_sequences
+from keras.layers import Dense, LSTM, Embedding, Dropout, GRU, Bidirectional
 import numpy as np
-from keras.preprocessing.text import Tokenizer
-
 from keras.models import load_model
 
 
 class Model:
-    def __init__(
-        self,
-        no_of_neurons=8,
-        no_of_hidden_layers=4,
-        activation_function="relu",
-        learning_rate=0.01,
-    ) -> None:
-        self.learning_rate = learning_rate
-        self.hidden_layers = no_of_hidden_layers
-        self.neurons = no_of_neurons
-        self.optimizer = tf.keras.optimizers.legacy.Adam(self.learning_rate)
+    def __init__(self) -> None:
+        self.optimizer = tf.keras.optimizers.legacy.Adam
         self.metrices = ["accuracy"]
-        self.activation_func = activation_function
         self.elipson = None
         self.__model = None
+        self.model_name = None
 
-    def recurrent_model(self, vocab_size, seq_len, units=64):
-        """initialize the neural network model with the given characterstices like layer"""
-        self.__model = Sequential()
-        self.__model.add(
-            Embedding(input_dim=vocab_size, output_dim=50, input_length=seq_len)
-        )
-        self.__model.add(LSTM(units=units, dropout=0.2, recurrent_dropout=0.2))
-        # self.__model.add(Dropout(0.5))
-        # self.__model.add(LSTM(units=(units//2)))
-        # self.__model.add(Dense(self.neurons, activation=self.activation_func))
-        self.__model.add(Dense(2, activation="softmax"))
-        self.__model.compile(
-            loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"]
-        )
+    def init_model(
+        self,
+        seq_len,
+        vocab_size=None,
+        model_type: "LSTM" = "LSTM or GRU or Bidirectional",
+        units=64,
+        no_of_neurons=8,
+        learning_rate=0.01,
+        layer=None,
+        droup_out=0.2,
+        model_name=None,
+    ):
+        """initialize the neural network model with the given characterstices like model type, units , sequncence-length, vocab-size and learning rate"""
+
+        # assigning the name
+        self.model_name = model_name  # for saving the model
+
+        # checking and loading the previous model
+        try:
+            self.__model = self.load_model(self.model_name)
+        except OSError:
+            print("previous model not found creating new model")
+
+            # creating the new model
+            self.__model = Sequential()
+            self.__model.add(
+                Embedding(input_dim=vocab_size, output_dim=30, input_length=seq_len)
+            )
+            if layer is not None:
+                self.__model.add(model_type(layer(units=units)))
+            else:
+                self.__model.add(model_type(units=units))
+
+            self.__model.add(Dropout(droup_out))
+            # self.__model.add(LSTM(units=(units//2)))
+            # self.__model.add(Dense(self.neurons, activation=self.activation_func))
+            self.__model.add(Dense(2, activation="softmax"))
+            self.__model.compile(
+                loss="categorical_crossentropy",
+                optimizer=self.optimizer(learning_rate),
+                metrics=self.metrices,
+            )
+        else:
+            # checking and loading the model wiights
+            try:
+                self.load_model_weights(self.model_name)
+            except tf.errors.NotFoundError:
+                print("Model weight not found")
+        finally:
+            # finally compiling the model to match the current hyper parameters
+            self.__model.compile(
+                loss="categorical_crossentropy",
+                optimizer=self.optimizer(learning_rate),
+                metrics=self.metrices,
+            )
 
         print(self.__model.summary())
 
-    def general_model(self):
+    def init_general_model(
+        self,
+        hidden_layers,
+        no_of_neuraons,
+        activation_func="relu",
+        learning_rate=0.01,
+        model_name="general",
+    ):
         """initialize the neural network model with the given characterstices like layer"""
-        self.__model = Sequential()
-        self.__model.add(
-            Dense(self.neurons // 2, input_dim=70, activation=self.activation_func)
-        )
-        for _ in range(self.hidden_layers):
-            self.__model.add(Dense(self.neurons, activation=self.activation_func))
-        # self.__model.add(Dropout(0.2))
-        self.__model.add(Dense(2, activation="softmax"))
-        self.__model.compile(
-            loss="categorical_crossentropy",
-            optimizer=self.optimizer,
-            metrics=self.metrices,
-        )
+        # initialize the model name
+        self.model_name = model_name
 
-        # load the previous trained weights of the model
+        # checking the previous model if exists and also checking for it's weights if not creating new model
+        try:
+            self.__model = self.load_model(self.model_name)
+        except tf.errors.NotFoundError:
+            print("previous model not found creating new model")
 
-        # save the model
-        # self.save_model()
+            # creating the new general model
+            self.__model = Sequential()
+            self.__model.add(
+                Dense(no_of_neuraons // 2, input_dim=70, activation=activation_func)
+            )
+
+            for _ in range(hidden_layers):
+                self.__model.add(Dense(no_of_neuraons, activation=activation_func))
+            # self.__model.add(Dropout(0.2))
+            self.__model.add(Dense(2, activation="softmax"))
+
+        else:
+            # checking and loading the model wiights
+            try:
+                self.load_model_weights(self.model_name)
+            except tf.errors.NotFoundError:
+                print("Model weight not found")
+        finally:
+            # compiling the model in any case
+            self.__model.compile(
+                loss="categorical_crossentropy",
+                optimizer=self.optimizer(learning_rate),
+                metrics=self.metrices,
+            )
+
+        print(self.__model.summary())
 
     def train_model(self, X_train, y_train, epochs=100, batch_size=500, verbose=2):
         """train the model using the traning set and default epoch is set to 100, batch_size is 500 and verbose is 2 which can be overridden"""
@@ -70,11 +126,11 @@ class Model:
             X_train, y_train, epochs=epochs, batch_size=batch_size, verbose=verbose
         )
 
-        # # saving the model weights
-        # self.save_model_weights()
+        # saving the model weights
+        self.save_model_weights()
 
-        # # save the model
-        # self.save_model()
+        # save the model
+        self.save_model()
 
         return self.__model
 
@@ -91,26 +147,18 @@ class Model:
         """predict the review is whether postive or negative after traning the model"""
         return self.__model.predict(review, verbose=2)
 
-    def save_model(self):
+    def save_model(self, path="./data/model_weights/"):
         """this will save the entire model to the file"""
-        self.__model.save("./data/model_weights/model.h5")
+        self.__model.save((path + self.model_name))
 
-    def load_model(self, path="./data/model_weights/weights.h5"):
+    def load_model(self, model_name, path="./data/model_weights/"):
         """loads the model that is being saved"""
-        return load_model(path)
+        return load_model(f"{path}{model_name}")
 
-    def save_model_weights(self):
+    def save_model_weights(self, path="./data/model_weights/"):
         """save the model into the file when called"""
-        self.__model.save_weights("./data/model_weights/weights.h5")
+        self.__model.save_weights(f"{path}{self.model_name}_weights")
 
-    def load_model_weights(self):
+    def load_model_weights(self, model_name, path="./data/model_weights/"):
         """load the model from the the file when called"""
-        self.__model.load_weights("./data/model_weights/weights.h5")
-
-    def tokenize_and_pad_items(self, item_seq=None, max_length=70):
-        """tokenize the items, converts to the sequence and returns the sequence"""
-        tokenizer = Tokenizer()
-        tokenizer.fit_on_texts(item_seq)
-        item_seq = tokenizer.texts_to_sequences(item_seq)
-        item_seq = pad_sequences(item_seq, maxlen=max_length, truncating="pre")
-        return item_seq
+        self.__model.load_weights(f"{path}{model_name}_weights")
