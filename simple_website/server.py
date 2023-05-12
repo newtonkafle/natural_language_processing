@@ -30,7 +30,9 @@ def home():
 
     # load the model class
     model = Model()
-    loaded_model = model.load_model(model_name="LSTM", path="../data/model_weights/")
+    loaded_model = model.load_model(
+        model_name="Bidirectional", path="../data/model_weights/"
+    )
     form = Review()
     if request.method == "POST":
         print("hello")
@@ -39,20 +41,21 @@ def home():
             # print("hello")
             review = form.review_field.data
             # # review = [review]
-            print(review)
+            # print(review)
 
             # remove the stop words and lemitize the words
             cleaned_review = [data_prep.clean_and_lemmitize(review)]
 
+            print(review)
             # convert the text into the numerical data
             t_review = data_prep.tokenize_and_pad_items(
-                item_seq=cleaned_review, max_length=70
+                item_seq=cleaned_review, max_length=50
             )  # noqa: E402
 
-            print(t_review)
+            # print(t_review)
 
             predictions = np.argmax(loaded_model.predict(t_review), axis=1)
-            print(predictions)
+            # print(predictions)
 
             result = "Postive" if predictions[0] == 1 else "Negative"
             print(result)
